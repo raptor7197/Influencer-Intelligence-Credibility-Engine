@@ -75,11 +75,29 @@ an evaluator should be able to verify that:
 | b - native rebuild | implement discovery and scoring fully in app backend | full control and stronger ux | longer build and higher initial effort |
 | c - hybrid | n8n discovery plus native scoring and outreach | balanced speed and flexibility | integration complexity |
 
+#### approach c hybrid n8n for discovery native for everything else
+use the n8n workflow as the initial discovery engine triggered via webhook, while native backend services handle scoring, enrichment, explainability, and outreach generation. the frontend owns the full user experience.
+
+pros:
+- best balance of speed and flexibility
+- reuses proven discovery logic
+- gradual migration path away from n8n when native discovery is stable
+
+cons:
+- two systems to maintain
+- higher integration complexity
+- requires a clean handoff between n8n output and native processing
+
+technical problems:
+- data format normalization between n8n and backend
+- boundary error handling
+- async coordination for discovery status and retries
+
 #### selected direction
 primary: approach c (hybrid)
-backup: approach b (native rebuild)
+fallback: approach a (thin wrapper using n8n workflow)
 
-reasoning: hybrid gives fast delivery by reusing current discovery while preserving control over explainability, scoring transparency, and user review workflows.
+reasoning: hybrid gives fast delivery by reusing current discovery while preserving control over explainability, scoring transparency, and user review workflows, while the thin wrapper path remains a safe fallback.
 
 #### dependency checklist
 | dependency | type | risk | action |
@@ -90,6 +108,19 @@ reasoning: hybrid gives fast delivery by reusing current discovery while preserv
 | database service | infra | low | provision postgresql early |
 | optional social enrichment api | external api | medium | defer to post-mvp unless required |
 
+#### openpaws hugging face model research
+| need | model | fit |
+|---|---|---|
+| support for animal advocacy detection | `open-paws/animal_alignment_prediction_shortform` | strong for ranking text by advocacy alignment |
+| support for advocacy preference scoring | `open-paws/animal_advocate_preference_prediction_longform` | useful for longer text messaging evaluation |
+| relevance to animal issues | `open-paws/relevance_to_animal_issues_prediction_shortform` | useful for filtering off-topic creators and content |
+| predicted impact on animals | `open-paws/effect_on_animals_prediction_shortform` | useful for prioritizing higher welfare impact messaging |
+
+current gap:
+- openpaws models are mainly text ranking and preference prediction models
+- no explicit openpaws model is listed as a dedicated animal violence detector
+- use a two-stage pipeline: stage 1 safety or violence classifier, stage 2 openpaws advocacy-alignment scoring
+
 ## stage 2 - design and architecture
 
 ### Day 3 - system design (most important)
@@ -99,57 +130,36 @@ reasoning: hybrid gives fast delivery by reusing current discovery while preserv
 flowchart LR
     user_node["user"] --> fe["web app frontend"]
     fe --> api["backend api layer"]
-    api --> discovery["n8n discovery workflow"]
+    api --> native_discovery["native discovery service"]
     api --> llm["llm scoring and drafting service"]
     api --> db["postgresql database"]
-    discovery --> api
+    api --> n8n_discovery["n8n discovery workflow fallback"]
+    native_discovery --> api
+    n8n_discovery --> api
     llm --> api
     db --> api
 ```
 
 #### data model diagram
 ```mermaid
-erDiagram
-    CAMPAIGNS ||--o{ INFLUENCERS : contains
-    INFLUENCERS ||--o{ OUTREACH_DRAFTS : generates
-    CAMPAIGNS ||--o{ DISCOVERY_RUNS : tracks
+flowchart TB
+    campaigns["campaigns"]
+    influencers["influencers"]
+    outreach_drafts["outreach_drafts"]
+    discovery_runs["discovery_runs"]
 
-    CAMPAIGNS {
-        string id
-        string org_name
-        string campaign_goal
-        string target_audience
-        string language
-        string status
-    }
-
-    INFLUENCERS {
-        string id
-        string campaign_id
-        string name
-        string handle
-        float alignment_score
-        float credibility_score
-        string status
-        string evidence_json
-    }
-
-    OUTREACH_DRAFTS {
-        string id
-        string influencer_id
-        string subject_line
-        string message_body
-        boolean is_edited
-    }
-
-    DISCOVERY_RUNS {
-        string id
-        string campaign_id
-        string status
-        string external_run_id
-        int result_count
-    }
+    campaigns -->|1 to many| influencers
+    influencers -->|1 to many| outreach_drafts
+    campaigns -->|1 to many| discovery_runs
 ```
+
+#### core schema fields
+| entity | key fields |
+|---|---|
+| campaigns | id, org_name, campaign_goal, target_audience, language, status |
+| influencers | id, campaign_id, name, handle, alignment_score, credibility_score, status, evidence_json |
+| outreach_drafts | id, influencer_id, subject_line, message_body, is_edited |
+| discovery_runs | id, campaign_id, status, external_run_id, result_count |
 
 
 #### tech stack decisions
