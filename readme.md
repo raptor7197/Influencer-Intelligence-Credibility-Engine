@@ -96,20 +96,13 @@ reasoning: hybrid gives fast delivery by reusing current discovery while preserv
 
 #### architecture diagram
 ```mermaid
-flowchart lr
-    u[user]
-    fe[web app frontend]
-    api[backend api layer]
-    n8n[n8n discovery workflow]
-    llm[llm scoring and drafting service]
-    db[(postgresql)]
-
-    u --> fe
-    fe --> api
-    api --> n8n
-    api --> llm
-    api --> db
-    n8n --> api
+flowchart LR
+    user_node["user"] --> fe["web app frontend"]
+    fe --> api["backend api layer"]
+    api --> discovery["n8n discovery workflow"]
+    api --> llm["llm scoring and drafting service"]
+    api --> db["postgresql database"]
+    discovery --> api
     llm --> api
     db --> api
 ```
@@ -117,46 +110,47 @@ flowchart lr
 #### data model diagram
 ```mermaid
 erDiagram
-    campaigns ||--o{ influencers : contains
-    influencers ||--o{ outreach_drafts : generates
-    campaigns ||--o{ discovery_runs : tracks
+    CAMPAIGNS ||--o{ INFLUENCERS : contains
+    INFLUENCERS ||--o{ OUTREACH_DRAFTS : generates
+    CAMPAIGNS ||--o{ DISCOVERY_RUNS : tracks
 
-    campaigns {
-        uuid id
-        text org_name
-        text campaign_goal
-        text target_audience
-        text language
-        text status
+    CAMPAIGNS {
+        string id
+        string org_name
+        string campaign_goal
+        string target_audience
+        string language
+        string status
     }
 
-    influencers {
-        uuid id
-        uuid campaign_id
-        text name
-        text handle
+    INFLUENCERS {
+        string id
+        string campaign_id
+        string name
+        string handle
         float alignment_score
         float credibility_score
-        text status
-        jsonb evidence
+        string status
+        string evidence_json
     }
 
-    outreach_drafts {
-        uuid id
-        uuid influencer_id
-        text subject_line
-        text message_body
+    OUTREACH_DRAFTS {
+        string id
+        string influencer_id
+        string subject_line
+        string message_body
         boolean is_edited
     }
 
-    discovery_runs {
-        uuid id
-        uuid campaign_id
-        text status
-        text external_run_id
+    DISCOVERY_RUNS {
+        string id
+        string campaign_id
+        string status
+        string external_run_id
         int result_count
     }
 ```
+
 
 #### tech stack decisions
 | layer | selected option | why this fits |
@@ -191,17 +185,14 @@ design rule: every score must include rationale text and cited evidence, plus vi
 
 #### user flow
 ```mermaid
-flowchart td
-    a[start campaign]
-    b[enter campaign details]
-    c[run discovery]
-    d[review recommended influencers]
-    e[approve or reject each candidate]
-    f[generate outreach draft]
-    g[edit message]
-    h[copy or export final output]
-
-    a --> b --> c --> d --> e --> f --> g --> h
+flowchart TD
+    start_node["start campaign"] --> details["enter campaign details"]
+    details --> discover["run discovery"]
+    discover --> review["review recommended influencers"]
+    review --> decide["approve or reject each candidate"]
+    decide --> draft["generate outreach draft"]
+    draft --> edit["edit message"]
+    edit --> output["copy or export final output"]
 ```
 
 #### execution task plan
