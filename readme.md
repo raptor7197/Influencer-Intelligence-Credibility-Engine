@@ -4,10 +4,10 @@
 
 | day | priority | objective | decision gate | deliverable |
 |---|---|---|---|---|
-| day 1 | important | absorb the brief, define user and impact, validate assumptions | problem and user are clear | brief understanding note + assumption log + question list |
-| day 2 | somewhat important | explore solution space and pick primary path with backup | mentor sign-off for approach | one-page project discovery note |
-| day 3 | most important | lock system design, data model, api contract, explainability model | architecture is coherent and buildable | architecture, schema, integration plan, scoring model |
-| day 4 | not that important but still | map user flow and break work into execution tasks | stage 3 plan is actionable | prioritized task plan with critical path |
+| day 1  | absorb the brief, define user and impact, validate assumptions | problem and user are clear | brief understanding note + assumption log + question list |
+| day 2  | explore solution space and pick primary path with backup | mentor sign-off for approach | one-page project discovery note |
+| day 3  | lock system design, data model, api contract, explainability model | architecture is coherent and buildable | architecture, schema, integration plan, scoring model |
+| day 4  | map user flow and break work into execution tasks | stage 3 plan is actionable | prioritized task plan with critical path |
 
 ## project context
 
@@ -28,9 +28,8 @@ an evaluator should be able to verify that:
 - a human can approve or reject each candidate
 - the system can generate editable outreach drafts
 
-## stage 1 - discovery
 
-### Day 1 - absorb the brief 
+### Day 1 
 
 #### outputs required
 | output | description | status rule |
@@ -43,23 +42,18 @@ an evaluator should be able to verify that:
 #### assumption register
 | id | assumption | verifiable now | action |
 |---|---|---|---|
-| a1 | existing n8n discovery workflow is usable through webhook | yes | test with sample payload |
-| a2 | social data access can be done legally and within platform terms | partially | confirm data source policy |
-| a3 | llm reasoning can produce usable alignment rationale | yes | run prompt quality tests |
-| a4 | users will review and edit drafts instead of trusting automation blindly | no | confirm through pilot feedback |
-| a5 | v1 can run without authentication | no | confirm with stakeholders |
+| a1 | existing n8n discovery workflow is usable through webhook  | test with sample payload |
+| a2 | social data access can be done legally and within platform terms  | confirm data source policy |
+| a3 | llm reasoning can produce usable alignment rationale  | run prompt quality tests |
+| a4 | users will review and edit drafts instead of trusting automation blindly | confirm once |
+| a5 | v1 can run without authentication | confirm with once |
 
 #### day 1 guiding questions
-1. what exactly is the acceptance criteria for done?
-2. who signs off completion?
-3. what is the smallest useful version?
-4. which social platforms are first priority?
-5. do we need data persistence across sessions?
-6. is this internal-only or public-facing?
 
-### Day 2 - explore the solution space (somewhat important)
 
-#### research snapshot
+### Day 2 - other solutions
+
+#### research 
 | reference | what it does well | where it falls short for this project |
 |---|---|---|
 | influencex | full discovery-to-outreach pipeline and self-hosting | optimized for commercial marketing, weak value alignment logic |
@@ -121,24 +115,70 @@ current gap:
 - no explicit openpaws model is listed as a dedicated animal violence detector
 - use a two-stage pipeline: stage 1 safety or violence classifier, stage 2 openpaws advocacy-alignment scoring
 
-## stage 2 - design and architecture
 
-### Day 3 - system design (most important)
+### Day 3 - system design
 
 #### architecture diagram
 ```mermaid
 flowchart LR
     user_node["user"] --> fe["web app frontend"]
     fe --> api["backend api layer"]
-    api --> native_discovery["native discovery service"]
-    api --> llm["llm scoring and drafting service"]
+    
+    subgraph Discovery & Scoring
+        direction LR
+        n8n_discovery["n8n discovery workflow fallback"] --> api
+        native_discovery["native discovery service"] --> api
+        api --> llm["llm scoring & drafting service"]
+    end
+
     api --> db["postgresql database"]
-    api --> n8n_discovery["n8n discovery workflow fallback"]
-    native_discovery --> api
-    n8n_discovery --> api
-    llm --> api
     db --> api
 ```
+
+#### native scoring engine (6-dimensional rubric on top of n8n)
+The native scoring engine is the core of the explainability model. After the n8n discovery workflow identifies a potential influencer, the backend API triggers the LLM scoring service. This service evaluates each candidate against a 6-dimensional analytic rubric, making six independent, parallel LLM calls per influencer.
+
+```mermaid
+flowchart TD
+    subgraph "Analytic Rubric Scoring (per influencer)"
+        direction LR
+        
+        A[Campaign Context] --> LLM_CALLS
+        B[Influencer Dossier] --> LLM_CALLS
+        C[Rubric Dimensions] --> LLM_CALLS
+
+        subgraph LLM_CALLS [6x Parallel LLM Calls]
+            direction TB
+            D1["D1: Values Alignment"]
+            D2["D2: Audience Relevance"]
+            D3["D3: Credibility & Trust"]
+            D4["D4: Reachability"]
+            D5["D5: Risk & Controversy"]
+            D6["D6: Campaign Fit"]
+        end
+        
+        LLM_CALLS --> AGGREGATE{Aggregate Scores}
+    end
+    
+    AGGREGATE --> COMPOSITE_SCORE["Calculate Composite Score"]
+    COMPOSITE_SCORE --> DB[Store in PostgreSQL]
+```
+
+**Scoring Rubric:**
+| dimension | weight | scale description |
+|---|---|---|
+| **D1: VALUES ALIGNMENT** | 30% | 1 = Actively opposes animal welfare positions; 3 = No clear signal; 5 = Advocate for adjacent causes; 7 = Direct evidence of support; 9 = Active, consistent animal advocacy |
+| **D2: AUDIENCE RELEVANCE** | 20% | 1 = Complete mismatch → 10 = Ideal demographic match |
+| **D3: CREDIBILITY & TRUST** | 20% | 1 = Known for inauthenticity / scandals → 10 = Widely regarded as highly credible |
+| **D4: REACHABILITY** | 10% | 1 = A-list celebrity, no realistic access → 10 = Actively seeks nonprofit partnerships |
+| **D5: RISK & CONTROVERSY** | -15% | 1 = No known risks → 10 = Serious controversy / toxic association |
+| **D6: CAMPAIGN FIT** | 15% | 1 = No natural connection to campaign → 10 = Natural, obvious fit |
+
+**Composite Score Formula:**
+The final score is a weighted sum of the dimension scores.
+`Composite Score = (D1_score * 0.30) + (D2_score * 0.20) + (D3_score * 0.20) + (D4_score * 0.10) - (D5_score * 0.15) + (D6_score * 0.15)`
+
+Each dimension's output includes not just a score but also a rationale, evidence snippets, and a confidence level, ensuring full transparency.
 
 #### data model diagram
 ```mermaid
@@ -157,20 +197,21 @@ flowchart TB
 | entity | key fields |
 |---|---|
 | campaigns | id, org_name, campaign_goal, target_audience, language, status |
-| influencers | id, campaign_id, name, handle, alignment_score, credibility_score, status, evidence_json |
+| influencers | id, campaign_id, name, handle, composite_score, status, evidence_json |
 | outreach_drafts | id, influencer_id, subject_line, message_body, is_edited |
 | discovery_runs | id, campaign_id, status, external_run_id, result_count |
 
+The `evidence_json` field stores the detailed breakdown for each of the 6 dimension scores, including rationale, evidence, and confidence.
 
 #### tech stack decisions
 | layer | selected option | why this fits |
 |---|---|---|
-| frontend and backend | next.js with typescript | single stack, fast iteration, clear api integration |
+| frontend and backend | react with typescript | single stack, fast iteration, clear api integration |
 | database | postgresql | strong relational model for campaign to influencer workflows |
 | orm | drizzle | typed schema and clean migrations |
 | llm integration | provider abstraction with primary and fallback model | resilience and cost control |
 | deployment | vercel or equivalent serverless target | low ops overhead for early stages |
-
+<!--
 #### api contract summary
 | endpoint | method | purpose |
 |---|---|---|
@@ -179,17 +220,50 @@ flowchart TB
 | `/api/campaigns/:id` | get | campaign plus influencer list |
 | `/api/influencers/:id` | patch | update decision and notes |
 | `/api/influencers/:id/outreach` | post | generate outreach draft |
-| `/api/outreach/:id` | patch | edit outreach draft |
+| `/api/outreach/:id` | patch | edit outreach draft |-->
 
 #### explainability and trust model
-| dimension | weight | evaluation rule |
+The system uses a 6-dimensional analytic rubric for scoring influencers, with each dimension evaluated through independent LLM calls:
+
+| dimension | weight | scale description |
 |---|---|---|
-| values alignment | 35% | mission fit signals in content and behavior |
-| audience relevance | 25% | overlap with target audience and campaign context |
-| credibility and trust | 25% | authenticity, reputation, consistency |
-| reachability | 15% | practical chance of contact and collaboration |
+| **D1: VALUES ALIGNMENT** | 30% | 1 = Actively opposes animal welfare positions → 9 = Active, consistent animal advocacy behavior |
+| **D2: AUDIENCE RELEVANCE** | 20% | 1 = Complete mismatch → 10 = Ideal demographic match |
+| **D3: CREDIBILITY & TRUST** | 20% | 1 = Known for inauthenticity / scandals → 10 = Widely regarded as highly credible |
+| **D4: REACHABILITY** | 10% | 1 = A-list celebrity, no realistic access → 10 = Actively seeks nonprofit partnerships |
+| **D5: RISK & CONTROVERSY** | -15%* | 1 = No known risks → 10 = Serious controversy / toxic association *(negative weight)* |
+| **D6: CAMPAIGN FIT** | 15% | 1 = No natural connection to campaign → 10 = Natural, obvious fit |
+
+*D5 is a penalty dimension where higher scores reduce the composite score.
+
+Each dimension returns: `{ "dimension": "...", "score": 1-10, "rationale": "...", "evidence": [...], "confidence": "...", "uncertainty": "..." }`
 
 design rule: every score must include rationale text and cited evidence, plus visible uncertainty notes.
+
+#### llm scoring process diagram
+The LLM scoring service uses a 6-dimensional analytic rubric to evaluate each influencer. For each dimension, it makes an independent call with the following inputs:
+- Campaign context (goal, audience, organization)
+- Influencer evidence dossier (from Stage 2 discovery)
+- Dimension-specific rubric with behavioral anchors
+
+```mermaid
+flowchart LR
+    A[Campaign Context] --> LLM[LLM Scoring Service]
+    B[Influencer Evidence Dossier] --> LLM
+    C[Dimension-Specific Rubric] --> LLM
+    LLM --> D1[D1: Values Alignment\nScore: 1-10\nRationale, Evidence, Confidence]
+    LLM --> D2[D2: Audience Relevance\nScore: 1-10\nRationale, Evidence, Confidence]
+    LLM --> D3[D3: Credibility & Trust\nScore: 1-10\nRationale, Evidence, Confidence]
+    LLM --> D4[D4: Reachability\nScore: 1-10\nRationale, Evidence, Confidence]
+    LLM --> D5[D5: Risk & Controversy\nScore: 1-10\nRationale, Evidence, Confidence]
+    LLM --> D6[D6: Campaign Fit\nScore: 1-10\nRationale, Evidence, Confidence]
+    D1 --> API[Backend API Layer]
+    D2 --> API
+    D3 --> API
+    D4 --> API
+    D5 --> API
+    D6 --> API
+```
 
 ### Day 4 - flow design and planning (not that important but still)
 
