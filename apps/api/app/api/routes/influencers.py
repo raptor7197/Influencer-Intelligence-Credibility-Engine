@@ -105,7 +105,7 @@ def update_influencer_status_endpoint(
     influencer = update_influencer_status(db, influencer_id, body.status)
     if not influencer:
         raise HTTPException(status_code=404, detail="influencer not found")
-    log_action(db, "influencer.status_changed", "influencer", influencer.id, {"status": status})
+    log_action(db, "influencer.status_changed", "influencer", influencer.id, {"status": body.status})
     return {"id": influencer.id, "status": influencer.status}
 
 

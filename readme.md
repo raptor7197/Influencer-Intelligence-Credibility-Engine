@@ -1,14 +1,28 @@
-# OpenPaws RDP description
+# Influencer Intelligence & Credibility Engine
 
-## overview
-| day | priority | objective | decision gate | deliverable |
-|---|---|---|---|---|
-| day 1  | absorb the brief, define user and impact, validate assumptions | problem and user are clear | brief understanding note + assumption log + question list |
-| day 2  | explore solution space and pick primary path with backup | mentor sign-off for approach | one-page project discovery note |
-| day 3  | lock system design, data model, api contract, explainability model | architecture is coherent and buildable | architecture, schema, integration plan, scoring model |
-| day 4  | map user flow and break work into execution tasks | stage 3 plan is actionable | prioritized task plan with critical path |
+llm-powered platform for animal advocacy orgs to discover, score, and activate social media influencers. define a campaign (goal, region, audience), the system finds candidates via llm or n8n, scores them across 8 dimensions (animal welfare alignment, values, credibility, risk, etc.), and generates editable outreach drafts. human approves before any outreach.
 
-## project context
+### quick start
+```bash
+pnpm install
+cp apps/api/.env.example apps/api/.env   # add your openrouter + serper keys
+cd apps/frontend && pnpm add recharts && cd ../..
+pnpm dev
+```
+frontend on `http://localhost:5173`, backend on `http://localhost:8000`. database is `apps/api/iice_test.db` (sqlite).
+
+### tunnel
+```bash
+ngrok http 5173 --pooling-enabled=true   # frontend
+ngrok http 8000 --pooling-enabled=true   # backend
+```
+
+### push to github
+```bash
+git init && git add . && git commit -m "init"
+git remote add origin <repo-url>
+git push -u origin main
+```
 
 ### problem statement
 animal advocacy teams often struggle to reach people outside their existing supporter circle. finding credible mainstream influencers with aligned values is slow, manual, and risky.
@@ -28,7 +42,6 @@ an evaluator should be able to verify that:
 - the system can generate editable outreach drafts
 
 
-### Day 1 
 
 #### outputs required
 | output | description | status rule |
@@ -46,11 +59,6 @@ an evaluator should be able to verify that:
 | a3 | llm reasoning can produce usable alignment rationale  | run prompt quality tests |
 | a4 | users will review and edit drafts instead of trusting automation blindly | confirm once |
 | a5 | v1 can run without authentication | confirm with once |
-
-#### day 1 guiding questions
-
-
-### Day 2 - other solutions
 
 #### research 
 | reference | what it does well | where it falls short for this project |
@@ -114,9 +122,6 @@ current gap:
 - no explicit openpaws model is listed as a dedicated animal violence detector
 - use a two-stage pipeline: stage 1 safety or violence classifier, stage 2 openpaws advocacy-alignment scoring
 
-
-### Day 3 - system design
-
 #### architecture diagram
 ```mermaid
 flowchart LR
@@ -142,7 +147,7 @@ flowchart TD
     subgraph "Analytic Rubric Scoring (per influencer)"
         direction LR
         
-        A[Campaign Context] --> LLM_CALLS
+        A[Campaign Context] --> LLM_CALLS1-Minute Pitch
         B[Influencer Dossier] --> LLM_CALLS
         C[Rubric Dimensions] --> LLM_CALLS
 
@@ -263,8 +268,6 @@ flowchart LR
     D5 --> API
     D6 --> API
 ```
-
-### Day 4 - flow design and planning 
 
 #### user flow
 ```mermaid
