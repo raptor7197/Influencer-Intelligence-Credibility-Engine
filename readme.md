@@ -1,7 +1,6 @@
 # OpenPaws RDP description
 
-## 2-minute evaluator view
-
+## overview
 | day | priority | objective | decision gate | deliverable |
 |---|---|---|---|---|
 | day 1  | absorb the brief, define user and impact, validate assumptions | problem and user are clear | brief understanding note + assumption log + question list |
@@ -265,7 +264,7 @@ flowchart LR
     D6 --> API
 ```
 
-### Day 4 - flow design and planning (not that important but still)
+### Day 4 - flow design and planning 
 
 #### user flow
 ```mermaid
@@ -291,9 +290,6 @@ flowchart TD
 | 7 | polish filters, sorting, and error handling | 4h | no |
 | 8 | add telemetry and basic docs | 2h | no |
 
-#### build order decision
-start with backend integration and data persistence first because it de-risks discovery quality and end-to-end viability before ui polish.
-
 ## risks and controls
 | risk | impact | likelihood | mitigation |
 |---|---|---|---|
@@ -302,13 +298,3 @@ start with backend integration and data persistence first because it de-risks di
 | timeout or unstable webhook execution | medium | medium | async run tracking, retries, and clear failure states |
 | cost drift from llm usage | medium | medium | token budget caps and model fallback strategy |
 | weak user trust in recommendations | high | medium | transparent scoring breakdown and manual override |
-
-## sign-off checklist
-| checkpoint | owner | pass condition |
-|---|---|---|
-| day 1 review | mentor | problem, user, assumptions, and question list are complete |
-| day 2 review | mentor | primary plus backup approach accepted |
-| day 3 review | mentor and technical lead | architecture, schema, and api plan are coherent |
-| day 4 review | mentor | task plan is prioritized and executable |
-
-this readme is now structured for quick evaluation and direct execution.

@@ -1,0 +1,6 @@
+{
+  "campaign_id": "campaign-id",
+  "discovery_run_id": "run-id",
+  "candidate_id": "candidate-id",
+  "status": "queued"
+}

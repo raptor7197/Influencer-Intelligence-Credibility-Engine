@@ -1,0 +1,11 @@
+{
+  "org_name": "Example Org",
+  "outreach_person": "Example User",
+  "campaign_goal": "Reach a broader audience through credible messengers",
+  "target_audience": "Optional audience description",
+  "geo_focus": "Optional location",
+  "language": "en",
+  "categories": ["optional", "niches"],
+  "exclusions": ["optional", "sensitivities"],
+  "candidate_cap": 20
+}
