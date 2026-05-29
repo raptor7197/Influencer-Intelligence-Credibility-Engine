@@ -214,7 +214,6 @@ export const InfluencerDetail: React.FC<InfluencerDetailProps> = ({ influencerId
                           <YAxis type="category" dataKey="dimension" tick={{ fontSize: 11, fill: 'var(--ink)', fontWeight: 700 }} width={120} axisLine={false} tickLine={false} />
                           <Tooltip
                             contentStyle={{ background: 'var(--paper)', border: '2px solid var(--line)', borderRadius: 0, fontSize: 12 }}
-                            formatter={(value: number) => [`${value}/10`, 'Score']}
                           />
                           <Bar dataKey="score" radius={[0, 3, 3, 0]} barSize={18}>
                             {influencer.dimension_scores.map((d, i) => (

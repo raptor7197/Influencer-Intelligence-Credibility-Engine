@@ -61,7 +61,7 @@ export const CampaignDetail: React.FC<CampaignDetailProps> = ({ campaignId, onBa
     return () => window.removeEventListener('focus', onFocus);
   }, []);
 
-  const progressTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const progressTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     return () => {

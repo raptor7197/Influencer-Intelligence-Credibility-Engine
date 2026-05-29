@@ -11,7 +11,7 @@ interface ProgressData {
 
 interface ProgressOverlayProps {
   data: ProgressData | null;
-  hasActiveRun: boolean;
+  hasActiveRun?: boolean;
 }
 
 export const ProgressOverlay: React.FC<ProgressOverlayProps> = ({ data, hasActiveRun }) => {
