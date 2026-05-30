@@ -6,6 +6,7 @@ COPY pyproject.toml .
 RUN pip install --no-cache-dir .
 
 COPY app/ app/
+COPY iice_test.db test_int.db ./
 
 EXPOSE 8000
 
