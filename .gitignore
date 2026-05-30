@@ -10,6 +10,10 @@ n8nworkflow.json
 # the n8n workflow with the
 # Database
 *.db
+!/iice_test.db
+!/test_int.db
+!/apps/api/iice_test.db
+!/apps/api/test_int.db
 *.sqlite
 *.sqlite3
 
