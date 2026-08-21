@@ -24,6 +24,8 @@ git remote add origin <repo-url>
 git push -u origin main
 ```
 
+## Demo Link : https://drive.google.com/file/d/1yyNZ-GJn9PzZFQsVZlCTKoZAelgS2UiV/view?usp=sharing
+
 ### problem statement
 animal advocacy teams often struggle to reach people outside their existing supporter circle. finding credible mainstream influencers with aligned values is slow, manual, and risky.
 
